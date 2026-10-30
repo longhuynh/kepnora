@@ -1,170 +1,113 @@
-# Kepnora — M0 Foundation Implementation
+# Kepnora — M1 Authentication, Workspace Provisioning & Authorization
 
-You are a Senior .NET Software Architect and Backend Engineer working on the **Kepnora** project.
+**Version:** 1.0 · **Status:** Implementation handoff, pending verification against the completed M0 repository · **Dependency:** M0/G0 passed · **Exit gate:** G1
 
-Your task is to review the existing project specifications and implement **Milestone M0 — Foundation**.
+## 1. Source of truth
 
-## 1. Read the Project Specifications First
+Read and reconcile these repository files before editing code:
 
-Before writing any code, carefully read the following Markdown files in order:
+1. `docs/mvp-build-order.md` — M1-01 through M1-08 and G1 acceptance criteria.
+2. `docs/architecture/authentication-authorization.md` — global identity, membership, permissions, revocation, session security.
+3. `docs/architecture/tenant-isolation.md` — ABP tenant boundaries and membership enforcement.
+4. `docs/features/authentication-onboarding.md` — mobile authentication, first-run and optional onboarding.
+5. `docs/database-overview.md` (or the actual approved path) — membership schema and constraints.
+6. `docs/api/api-contracts-master.md` — approved API/DTO conventions.
+7. `docs/implementation/mobile-project-structure.md` and `docs/implementation/backend-project-structure.md` — repository structure.
 
-1. `docs/kepnora-project-context.md`
-2. `docs/architecture-overview.md`
-3. `docs/mvp-build-order.md`
-4. `docs/architecture/tenant-isolation.md`
-5. `docs/architecture/database-overview.md`
-6. `docs/implementation/backend-project-structure.md`
+**Preflight:** Confirm these files exist and identify the actual M0-selected ABP/Identity/OIDC architecture. The files may contain draft proposals; the tested M0 implementation and approved ADRs take precedence where explicitly superseded. Report discrepancies before changing the design.
 
-Also review these supporting files when relevant:
+## 2. Goal and boundaries
 
-- `docs/features/authentication-onboarding.md`
-- `docs/api/api-contracts-master.md`
-- `docs/implementation/mobile-project-structure.md`
+Deliver a secure, working end-to-end path: **sign up / sign in → verified global identity → personal workspace provisioning → workspace selection → authorized workspace requests → sign out**. A returning user must resume the correct session/workspace. A global user can belong to multiple workspaces, with a different role in each.
 
-**Important:** Treat these documents as the source of truth. Do not invent requirements or make architectural changes without identifying and explaining them first.
+**In scope:** authentication callback and session lifecycle; workspace listing, creation, selection and switching; workspace membership and Owner/Member permissions; tenant-aware API authorization; audit; first-run onboarding entry and ability to skip property creation; automated security tests; Expo mobile screens and states.
 
-If any document is missing, incomplete, or conflicts with another document, report the issue before proceeding.
+**Out of scope:** full Property CRUD (M2), My Items (M3), Maintenance, Documents, Billing/Subscription, Find Services, enterprise SSO, complex custom role editors. Optional property/item prompts may route to future modules or be deferred behind feature availability; do not fake persisted data.
 
-## 2. Technology Stack
+## 3. Hard invariants
 
-Follow the specifications, including the planned technologies:
+- One workspace maps to one authoritative **ABP Tenant**. Never create a parallel custom tenant registry.
+- One **global user identity** may be Owner in workspace X and Member in workspace Y.
+- Every protected workspace request checks **active membership plus operation permission**, independently of `ICurrentTenant`.
+- Workspace IDs from route/header/body/client are untrusted until membership is verified.
+- A user's Owner role in X never grants Owner rights in Y.
+- No access to another tenant's data through route guessing, spoofed headers, stale tokens or cached mobile state.
+- Only **Owner** and **Member** are MVP workspace roles. Last active Owner cannot be removed or demoted.
+- Provisioning and invitation/membership operations must be retry-safe; partial failures must be recoverable.
+- Do not store tokens in AsyncStorage or logs; use the M0-approved secure session mechanism (Expo SecureStore where applicable).
+- Property creation is optional; onboarding must finish without a Property or Item.
 
-- .NET 10
-- ASP.NET Core
-- ABP Framework
-- Modular Monolith Architecture
-- Entity Framework Core
-- PostgreSQL
-- React Native + Expo + TypeScript
-- REST APIs
+## 4. Implementation tasks
 
-Do not assume ABP compatibility with .NET 10. Verify it through a working proof of concept.
+### M1-01 — Mobile authentication and session lifecycle
 
-## 3. M0 Implementation Tasks
+Implement the M0-approved OIDC Authorization Code + PKCE / identity integration in the Expo app: sign-up/sign-in entry, callback, email-verification handling, session restore, access-token refresh, sign-out and expired/revoked session recovery. Store secrets only using approved secure storage. Handle loading, offline, cancellation, verification-pending and failure states. Avoid duplicate callback processing.
 
-### Step 1 — Architecture Review
+### M1-02 — Workspace list, select and switch
 
-Review the proposed architecture, module boundaries, project dependencies, and database design.
+Provide the authorized workspace list for the current global subject, including role and membership status. Support zero/one/multiple-workspace routing and explicit switching. On switch, clear or partition TanStack Query caches and any persisted state by workspace; cancel old in-flight requests and prevent stale responses from painting another workspace's UI. Restore a previous selection only after revalidating membership.
 
-Identify technical risks, missing requirements, and architectural inconsistencies.
+### M1-03 — Idempotent workspace provisioning
 
-### Step 2 — ABP Compatibility POC
+After a verified first login, create exactly one personal workspace using the **approved ABP Tenant Management integration**. Do not accept a client-chosen tenant ID. Use a server-side idempotency strategy or uniqueness invariant and handle concurrent retries. Do not treat tenant creation alone as completed provisioning.
 
-Create a minimal working ABP application targeting .NET 10.
+### M1-04 — Membership and profile persistence
 
-Verify:
+Persist `(TenantId, GlobalUserId)` membership with approved role/status and workspace profile metadata. Add reviewed EF Core migration(s) and enforce uniqueness and valid references according to the M0-approved identity model. Handle tenant-created/member-not-created partial failures with an explicit reconciliation/retry path; document transaction boundaries.
 
-- Application startup
-- Dependency injection
-- Module initialization
-- PostgreSQL connectivity
-- EF Core migrations
-- Authentication integration
+### M1-05 — Owner / Member authorization
 
-Document any compatibility issues and their solutions.
+Implement a documented permission matrix. At minimum: Owner can manage workspace membership; Member cannot. Both can access allowed regular workspace functions, subject to module-specific permissions. Protect against removing/demoting the final active Owner using a concurrency-safe server-side operation. Do not implement unapproved role types.
 
-### Step 3 — Multi-Tenancy POC
+### M1-06 — ABP API authorization boundary
 
-Kepnora uses the following model:
+Implement reusable membership-aware authorization for Application Services, validated tenant context, and tenant-scoped resource lookups. Distinguish `401` (not authenticated) from `403` (not authorized); conceal resource existence where the approved API policy requires `404`. Ensure revoked/inactive memberships are denied within the approved revocation bound. Never rely solely on client hiding buttons.
 
-- One Workspace represents one ABP Tenant.
-- A global user may belong to multiple Workspaces.
-- The MVP supports Owner and Member roles.
+### M1-07 — Audit, contracts and tests
 
-Validate whether this design works correctly with ABP Identity and multi-tenancy.
+Record security-relevant events without tokens/secrets: sign-in outcome where available, workspace provisioning, switch where server-relevant, membership changes and authorization denials. Update OpenAPI and generated TypeScript clients from actual endpoints; do not invent routes. Add PostgreSQL-backed integration tests and mobile session/cache tests.
 
-Pay special attention to global user identity, workspace membership, tenant switching, authorization, and data isolation.
+### M1-08 — First-run onboarding
 
-Do not assume that ABP supports this identity model out of the box.
+Implement Welcome / Sign In / Verify Email / Workspace Setup / Workspace Picker / introductory onboarding and Dashboard empty-state routing as applicable to the approved mobile screen scope. Make **Add Property** and **Add Item** optional, with visible Skip actions; do not build M2/M3 CRUD as part of M1. Returning verified users with an existing workspace must not repeat first-run setup.
 
-### Step 4 — Backend Solution Structure
+## 5. Required test scenarios
 
-Create the backend solution and project structure according to:
+| Scenario | Expected result |
+|---|---|
+| New verified user retries provisioning or two requests race | Exactly one personal workspace and one valid Owner membership |
+| User A is Owner of X and Member of Y | Can access both; Owner-only actions allowed only in X |
+| User C has no membership in X | All X protected endpoints deny access |
+| User sends a spoofed tenant ID/header | Membership check rejects unauthorized tenant |
+| Member tries to invite/remove another member | Forbidden |
+| Owner tries to remove/demote last active Owner | Rejected transactionally, including concurrent attempts |
+| Membership revoked while app remains signed in | Next protected request denied according to approved revocation policy |
+| Switch X → Y while X API request is in flight | No X data appears in Y; cache is partitioned/cleared |
+| Token expires / refresh fails / sign-out | Secure session cleared; protected screen inaccessible |
+| App killed during provisioning then reopened | Safe retry/recovery; no duplicate tenant or orphan membership |
+| User skips property and item prompts | Onboarding completes with zero properties and zero items |
+| Unverified user attempts provisioning | Blocked until verification, per approved policy |
 
-`docs/implementation/backend-project-structure.md`
+Use seeded fixtures: A (Owner X, Member Y), B (Owner Y, no X membership), C (no X/Y membership). Test real PostgreSQL and actual ABP filters, not only mocked repositories.
 
-Follow the documented module boundaries and dependency rules.
+## 6. G1 acceptance / definition of done
 
-Do not introduce unnecessary microservices or additional infrastructure.
+- **AC-M1-01:** New registered user gets exactly one personal workspace after retry.
+- **AC-M1-02:** User switches between two authorized workspaces without token or cache bleed.
+- **AC-M1-03:** Member cannot manage workspace members; Owner can.
+- **AC-M1-04:** Removing the last active Owner is rejected transactionally.
+- **AC-M1-05:** Inactive member cannot read tenant assets (use a protected test resource or existing M0 fixture; do not build M3 just to satisfy this).
+- **AC-M1-06:** No property required to complete onboarding.
 
-### Step 5 — Database Foundation
+Evidence required: successful builds; reviewed migration IDs and DB constraints; passing integration/security tests; OpenAPI snapshot and generated mobile client; screenshots/demo for auth and workspace flow; logs/correlation IDs without secrets; exact commit SHA; known issues and ADR updates. **Do not mark G1 complete solely because UI works.**
 
-Configure PostgreSQL and Entity Framework Core.
+## 7. Execution instructions for coding agent
 
-Implement the database foundation and migrations required for M0.
+1. Inspect repository and M0 completion evidence; identify the actual implemented identity model, ABP version, tenant management APIs and security decisions.
+2. Read all source-of-truth documents. Produce a gap/conflict list against the M0 code.
+3. Present a task-by-task M1 plan with file paths, migration changes, security tests and demo steps.
+4. **Wait for approval before changing code.**
+5. Implement M1-01 through M1-08 incrementally, building and testing after each task.
+6. Report measured evidence and unresolved risks; request approval before declaring G1 passed or starting M2.
 
-Follow the documented tenant isolation strategy.
-
-### Step 6 — Backend Infrastructure
-
-Configure the foundational backend components required by the specifications, including:
-
-- Dependency injection
-- Configuration management
-- Logging
-- Exception handling
-- API conventions
-- Development environment configuration
-
-### Step 7 — Mobile Foundation
-
-If included in the documented M0 scope, create the React Native + Expo application skeleton.
-
-Do not implement business feature screens yet.
-
-### Step 8 — Testing and Validation
-
-Add appropriate tests to validate:
-
-- Application startup
-- Database connectivity
-- EF Core migrations
-- Authentication
-- Workspace membership
-- Tenant isolation
-- Cross-tenant access restrictions
-
-## 4. Implementation Rules
-
-1. Follow the existing Markdown specifications.
-2. Do not implement M1 or later business features.
-3. Do not introduce unnecessary abstractions or overengineering.
-4. Use clean, maintainable, production-oriented code.
-5. Follow established .NET and ABP conventions.
-6. Keep the implementation compatible with the documented architecture.
-7. Explain any necessary deviations from the specifications.
-8. Do not silently change existing architectural decisions.
-9. Run builds and tests whenever possible.
-10. Do not claim a feature is working unless it has been verified.
-
-## 5. Expected Deliverables
-
-Provide:
-
-- Architecture review findings
-- ABP .NET 10 compatibility POC results
-- Global identity and multi-tenancy POC results
-- Backend solution structure
-- Database configuration and migrations
-- Foundation implementation
-- Automated tests and their results
-- Instructions for running the project locally
-- Known limitations and unresolved risks
-
-## 6. Execution Instructions
-
-**Do not start implementing everything immediately.**
-
-First:
-
-1. Read all required specification files.
-2. Summarize your understanding of M0.
-3. Identify missing information, conflicts, and technical risks.
-4. Propose a step-by-step implementation plan.
-5. Identify the first POC to implement.
-
-**Stop and wait for my approval before writing or modifying code.**
-
-Once approved, implement one step at a time, verify the result, and report progress before moving to the next step.
-
-The goal is to establish a stable, validated foundation for Kepnora before implementing M1 — Authentication and Workspace Management.
+**Important:** This handoff does not assert that M0 is actually validated. Verify its test evidence first. All routes, schemas and auth-provider specifics must be derived from the approved specs and the actual repository.
