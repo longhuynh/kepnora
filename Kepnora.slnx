@@ -1,0 +1,23 @@
+<Solution>
+    <Configurations>
+        <Platform Name="Any CPU" />
+    </Configurations>
+    <Folder Name="/src/">
+        <Project Path="src/Kepnora.Domain/Kepnora.Domain.csproj" />
+        <Project Path="src/Kepnora.Application/Kepnora.Application.csproj" />
+        <Project Path="src/Kepnora.EntityFrameworkCore/Kepnora.EntityFrameworkCore.csproj" />
+        <Project Path="src/Kepnora.Domain.Shared/Kepnora.Domain.Shared.csproj" />
+        <Project Path="src/Kepnora.Application.Contracts/Kepnora.Application.Contracts.csproj" />
+        <Project Path="src/Kepnora.HttpApi/Kepnora.HttpApi.csproj" />
+        <Project Path="src/Kepnora.HttpApi.Client/Kepnora.HttpApi.Client.csproj" />
+        <Project Path="src/Kepnora.HttpApi.Host/Kepnora.HttpApi.Host.csproj" />
+        <Project Path="src/Kepnora.DbMigrator/Kepnora.DbMigrator.csproj" />
+    </Folder>
+    <Folder Name="/test/">
+        <Project Path="test/Kepnora.Application.Tests/Kepnora.Application.Tests.csproj" />
+        <Project Path="test/Kepnora.EntityFrameworkCore.Tests/Kepnora.EntityFrameworkCore.Tests.csproj" />
+        <Project Path="test/Kepnora.TestBase/Kepnora.TestBase.csproj" />
+        <Project Path="test/Kepnora.Domain.Tests/Kepnora.Domain.Tests.csproj" />
+        <Project Path="test/Kepnora.HttpApi.Client.ConsoleTestApp/Kepnora.HttpApi.Client.ConsoleTestApp.csproj" />
+    </Folder>
+</Solution>

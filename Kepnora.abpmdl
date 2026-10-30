@@ -1,0 +1,109 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "5.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.Account": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.Identity": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "10.3.0",
+      "isInstalled": true,
+      "creationTime": "10/30/2026 04:59:30 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "Kepnora.Application": {
+      "path": "src/Kepnora.Application/Kepnora.Application.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.Application.Tests": {
+      "path": "test/Kepnora.Application.Tests/Kepnora.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Kepnora.Domain.Shared": {
+      "path": "src/Kepnora.Domain.Shared/Kepnora.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.Application.Contracts": {
+      "path": "src/Kepnora.Application.Contracts/Kepnora.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.HttpApi": {
+      "path": "src/Kepnora.HttpApi/Kepnora.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.HttpApi.Client": {
+      "path": "src/Kepnora.HttpApi.Client/Kepnora.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.EntityFrameworkCore.Tests": {
+      "path": "test/Kepnora.EntityFrameworkCore.Tests/Kepnora.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "Kepnora.EntityFrameworkCore": {
+      "path": "src/Kepnora.EntityFrameworkCore/Kepnora.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.TestBase": {
+      "path": "test/Kepnora.TestBase/Kepnora.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Kepnora.Domain.Tests": {
+      "path": "test/Kepnora.Domain.Tests/Kepnora.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Kepnora.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Kepnora.HttpApi.Client.ConsoleTestApp/Kepnora.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Kepnora.DbMigrator": {
+      "path": "src/Kepnora.DbMigrator/Kepnora.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.HttpApi.Host": {
+      "path": "src/Kepnora.HttpApi.Host/Kepnora.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "Kepnora.Domain": {
+      "path": "src/Kepnora.Domain/Kepnora.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
